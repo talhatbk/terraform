@@ -56,7 +56,7 @@ jobs:
 
     steps:
       - name: Wait for Manual Approval
-        uses: peter-evans/manual-approval@v2
+        uses: peter-evans/manual-approval@v3
         with:
           timeout-minutes: 1440
           instructions: 'Review the Terraform plan and approve to apply changes.'
