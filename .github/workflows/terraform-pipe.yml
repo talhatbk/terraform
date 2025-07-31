@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  TF_WORKING_DIR: ./terraform  # Adjust this if your code is in a different folder
+  TF_WORKING_DIR: . # Adjust this if your code is in a different folder
   AWS_REGION: us-west-2        # Change this to your region
 
 jobs:
