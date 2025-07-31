@@ -5,20 +5,20 @@ on:
     branches:
       - main
 
+env:
+  TF_WORKING_DIR: ./terraform       # Adjust if your .tf files are in a different folder
+  AWS_REGION: us-west-2             # Set your AWS region
+
 jobs:
   plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
 
-    env:
-      TF_WORKING_DIR: ./terraform  # adjust if your Terraform files are elsewhere
-      AWS_REGION: us-west-2        # update region as needed
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -38,7 +38,7 @@ jobs:
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform show -no-color tfplan.binary
 
-      - name: Upload plan artifact
+      - name: Upload Plan Artifact
         uses: actions/upload-artifact@v4
         with:
           name: terraform-plan
@@ -49,29 +49,25 @@ jobs:
     runs-on: ubuntu-latest
     needs: plan
 
-    env:
-      TF_WORKING_DIR: ./terraform
-      AWS_REGION: us-west-2
-
     steps:
       - name: Wait for Manual Approval
         uses: peter-evans/manual-approval@v2
         with:
-          timeout_minutes: 1440 # 24 hours max wait
-          instructions: 'Please review the Terraform plan above and approve to apply changes.'
+          timeout_minutes: 1440  # 24 hours
+          instructions: 'Please review the Terraform plan and approve this deployment.'
 
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Download plan artifact
-        uses: actions/upload-artifact@v4
+      - name: Download Plan Artifact
+        uses: actions/download-artifact@v4
         with:
           name: terraform-plan
           path: ${{ env.TF_WORKING_DIR }}
