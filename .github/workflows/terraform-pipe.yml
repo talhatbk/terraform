@@ -1,49 +1,3 @@
-name: Terraform CI/CD with Manual Approval
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  plan:
-    name: Terraform Plan
-    runs-on: ubuntu-latest
-
-    env:
-      TF_WORKING_DIR: ./terraform  # adjust if your Terraform files are elsewhere
-      AWS_REGION: us-west-2        # update region as needed
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Terraform Init
-        working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform init
-
-      - name: Terraform Plan
-        id: plan
-        working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform plan -out=tfplan.binary
-
-      - name: Show Terraform Plan
-        working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform show -no-color tfplan.binary
-
-      - name: Upload plan artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-plan
-          path: ${{ env.TF_WORKING_DIR }}/tfplan.binary
-
   apply:
     name: Terraform Apply
     runs-on: ubuntu-latest
@@ -57,7 +11,7 @@ jobs:
       - name: Wait for Manual Approval
         uses: peter-evans/manual-approval@v2
         with:
-          timeout_minutes: 1440 # 24 hours max wait
+          timeout_minutes: 1440
           instructions: 'Please review the Terraform plan above and approve to apply changes.'
 
       - name: Checkout code
@@ -71,7 +25,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Download plan artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/download-artifact@v4
         with:
           name: terraform-plan
           path: ${{ env.TF_WORKING_DIR }}
