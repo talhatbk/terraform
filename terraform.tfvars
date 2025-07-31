@@ -1,0 +1,6 @@
+aws_region   = "us-east-2"
+vpc_id       = "vpc-089b6f1235d7c530d"
+subnet_id    = "subnet-06ccc5562e040d440"
+key_name     = "my local"
+instance_type = "t2.medium"
+ami_id   = "ami-0d1b5a8c13042c939"
