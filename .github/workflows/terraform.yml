@@ -1,10 +1,10 @@
-name: Terraform CI/CD with Manual Approval
+name: Terraform Plan and Apply with Manual Approval
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:   # enables manual trigger for destroy job
+  workflow_dispatch:   # This enables manual triggering for both Plan and Apply
 
 env:
   TF_WORKING_DIR: .
@@ -43,19 +43,18 @@ jobs:
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform show -no-color tfplan.binary
 
-      - name: Upload plan artifact
+      - name: Upload Terraform Plan Artifact
         uses: actions/upload-artifact@v4
         with:
           name: terraform-plan
           path: ${{ env.TF_WORKING_DIR }}/tfplan.binary
 
-  destroy:
-    name: Terraform Destroy
+  apply:
+    name: Terraform Apply
     runs-on: ubuntu-latest
-    # Run when manually triggered or on push to main branch
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
-    environment: production  # Manual approval required here if triggered manually
-    needs: [plan]  # Ensure the plan job completes before destroy
+    needs: [plan]  # Ensure Plan job is completed before Apply
+    environment: production  # Manual approval required for apply
+    if: github.event_name == 'workflow_dispatch'  # Only manual trigger for Apply
 
     steps:
       - name: Checkout code
@@ -73,10 +72,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Download Terraform Plan Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: terraform-plan
+          path: ${{ env.TF_WORKING_DIR }}
+
       - name: Terraform Init
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform init
 
-      - name: Terraform Destroy
+      - name: Terraform Apply
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform destroy -auto-approve
+        run: terraform apply -auto-approve tfplan.binary
