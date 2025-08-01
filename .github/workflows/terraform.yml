@@ -1,4 +1,4 @@
-name: Terraform Plan
+name: Terraform CI/CD with Manual Approval
 
 on:
   push:
@@ -13,6 +13,9 @@ jobs:
   plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
+
+    outputs:
+      plan-exists: ${{ steps.upload.outputs.artifact-name }}
 
     steps:
       - name: Checkout code
@@ -42,8 +45,41 @@ jobs:
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform show -no-color tfplan.binary
 
-      - name: Upload Plan Artifact
+      - name: Upload plan artifact
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: terraform-plan
           path: ${{ env.TF_WORKING_DIR }}/tfplan.binary
+
+  apply:
+    name: Terraform Apply
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: production  # <--- This triggers manual approval!
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan
+          path: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply tfplan.binary
