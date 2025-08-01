@@ -1,4 +1,4 @@
-name: Terraform CI/CD with Manual Approval
+name: Terraform Plan
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
       - main
 
 env:
-  TF_WORKING_DIR: . # Adjust this if your code is in a different folder
-  AWS_REGION: us-west-2        # Change this to your region
+  TF_WORKING_DIR: .
+  AWS_REGION: us-west-2
 
 jobs:
   plan:
@@ -35,7 +35,6 @@ jobs:
         run: terraform init
 
       - name: Terraform Plan
-        id: plan
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform plan -out=tfplan.binary
 
@@ -43,31 +42,8 @@ jobs:
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform show -no-color tfplan.binary
 
-      - name: Upload plan artifact
+      - name: Upload Plan Artifact
         uses: actions/upload-artifact@v4
         with:
           name: terraform-plan
           path: ${{ env.TF_WORKING_DIR }}/tfplan.binary
-
-  apply:
-    name: Terraform Apply
-    runs-on: ubuntu-latest
-    needs: plan
-
-    steps:
-      - name: Wait for Manual Approval
-        uses: peter-evans/manual-approval@v3
-        with:
-          timeout-minutes: 1440
-          instructions: 'Review the Terraform plan and approve to apply changes.'
-
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Install Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.6.6
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
