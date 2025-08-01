@@ -14,9 +14,6 @@ jobs:
     name: Terraform Plan
     runs-on: ubuntu-latest
 
-    outputs:
-      plan-exists: ${{ steps.upload.outputs.artifact-name }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -46,7 +43,6 @@ jobs:
         run: terraform show -no-color tfplan.binary
 
       - name: Upload plan artifact
-        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: terraform-plan
@@ -56,7 +52,7 @@ jobs:
     name: Terraform Apply
     needs: plan
     runs-on: ubuntu-latest
-    environment: production  # <--- This triggers manual approval!
+    environment: production  # Requires manual approval in GitHub environment settings
 
     steps:
       - name: Checkout code
@@ -79,6 +75,10 @@ jobs:
         with:
           name: terraform-plan
           path: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init
 
       - name: Terraform Apply
         working-directory: ${{ env.TF_WORKING_DIR }}
