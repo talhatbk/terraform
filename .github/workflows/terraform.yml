@@ -70,7 +70,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Download Terraform Plan Artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3  # Updated to v3
         with:
           name: terraform-plan
           path: ${{ env.TF_WORKING_DIR }}
@@ -81,4 +81,4 @@ jobs:
 
       - name: Terraform Apply
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform apply  tfplan.binary
+        run: terraform apply tfplan.binary
